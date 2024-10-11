@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตัวอ่านไฟล์ ARPIC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #imageDisplay {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body class="container">
+
+    <h1 class="mt-5">ตัวอ่านไฟล์ ARPIC</h1>
+    <div class="mt-3">
+        <input type="file" id="fileInput" class="form-control" accept=".arpic">
+    </div>
+    <div class="mt-3" id="dataDisplay"></div>
+    <img id="imageDisplay" style="display:none;"/>
+
+    <div class="modal fade" id="passwordModal" tabindex="-1" aria-labelledby="passwordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="passwordModalLabel">กรุณากรอกรหัสผ่าน</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="password" id="passwordInput" class="form-control" placeholder="รหัสผ่าน">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+                    <button type="button" class="btn btn-primary" id="submitPassword">ยืนยัน</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = JSON.parse(e.target.result);
+                    const password = data.password;
+
+                    if (password) {
+                        // แสดง modal ให้กรอกรหัสผ่าน
+                        const passwordModal = new bootstrap.Modal(document.getElementById('passwordModal'));
+                        passwordModal.show();
+
+                        document.getElementById('submitPassword').onclick = function() {
+                            const userInput = document.getElementById('passwordInput').value;
+                            if (userInput === password) {
+                                displayData(data);
+                                passwordModal.hide();
+                            } else {
+                                alert("รหัสผ่านไม่ถูกต้อง!");
+                            }
+                        };
+                    } else {
+                        displayData(data);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function displayData(data) {
+            const displayDiv = document.getElementById('dataDisplay');
+            displayDiv.innerHTML = `
+                <p><strong>ชื่อไฟล์:</strong> ${data.file_name || 'N/A'}</p>
+                <p><strong>ผู้สร้าง:</strong> ${data.creator || 'N/A'}</p>
+                <p><strong>วันที่สร้าง:</strong> ${data.created_date || 'N/A'}</p>
+                <p><strong>สถานที่ถ่ายภาพ:</strong> ${data.location || 'N/A'}</p>
+                <p><strong>วันที่ถ่ายภาพ:</strong> ${data.taken_date || 'N/A'}</p>
+            `;
+
+            // แสดงภาพ
+            const base64_pic = data.base64_pic;
+            const imageDisplay = document.getElementById('imageDisplay');
+
+            try {
+                // ตรวจสอบและถอดรหัส Base64 สองรอบ
+                const decodedOnce = atob(base64_pic);
+                const decodedTwice = atob(decodedOnce);
+                imageDisplay.src = "data:image/png;base64," + btoa(decodedTwice);
+                imageDisplay.style.display = "block";
+            } catch (error) {
+                alert("เกิดข้อผิดพลาดในการแสดงภาพ: " + error.message);
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+</body>
+</html>
